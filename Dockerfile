@@ -11,7 +11,7 @@ COPY go.mod go.sum Makefile ./
 
 RUN make
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal@sha256:1b6d711648229a1c987f39cfdfccaebe2bd92d0b5d8caa5dbaa5234a9278a0b2
+FROM registry.access.redhat.com/ubi9/ubi-minimal@sha256:daa61d6103e98bccf40d7a69a0d4f8786ec390e2204fd94f7cc49053e9949360
 RUN microdnf --nodocs -y upgrade
 
 WORKDIR /gitsecure
