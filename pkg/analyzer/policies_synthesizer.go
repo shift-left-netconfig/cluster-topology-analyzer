@@ -13,6 +13,7 @@ package analyzer
 import (
 	"io/fs"
 	"path/filepath"
+	"slices"
 
 	networking "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -32,10 +33,11 @@ type WalkFunction func(root string, fn fs.WalkDirFunc) error
 // It is possible to get either a slice with all the discovered connections or a slice with K8s NetworkPolicies
 // that allow only the discovered connections and nothing more.
 type PoliciesSynthesizer struct {
-	logger      Logger
-	stopOnError bool
-	walkFn      WalkFunction
-	dnsPort     intstr.IntOrString
+	logger          Logger
+	stopOnError     bool
+	walkFn          WalkFunction
+	dnsPort         intstr.IntOrString
+	connectionsFile string
 
 	errors []FileProcessingError
 }
@@ -79,6 +81,12 @@ func WithDNSPort(dnsPort int) PoliciesSynthesizerOption {
 func WithDNSNamedPort(dnsPort string) PoliciesSynthesizerOption {
 	return func(p *PoliciesSynthesizer) {
 		p.dnsPort = intstr.FromString(dnsPort)
+	}
+}
+
+func WithConnectionsFile(filename string) PoliciesSynthesizerOption {
+	return func(p *PoliciesSynthesizer) {
+		p.connectionsFile = filename
 	}
 }
 
@@ -235,7 +243,18 @@ func (ps *PoliciesSynthesizer) extractConnections(resAcc *resourceAccumulator) (
 	resAcc.exposeServices()
 
 	// Discover all connections between resources
-	connections := discoverConnections(resAcc.workloads, resAcc.services, ps.logger)
+	ce := connectionExtractor{workloads: resAcc.workloads, services: resAcc.services, logger: ps.logger}
+	connections := ce.discoverConnections()
+
+	// If user specified a file with extra connections, add them too
+	if ps.connectionsFile != "" {
+		fileConns, err := ce.connectionsFromFile(ps.connectionsFile)
+		if err != nil {
+			fpErr := failedReadingFile(ps.connectionsFile, err)
+			return nil, nil, appendAndLogNewError(fileErrors, fpErr, ps.logger)
+		}
+		connections = slices.Concat(connections, fileConns)
+	}
 	return resAcc.workloads, connections, fileErrors
 }
 

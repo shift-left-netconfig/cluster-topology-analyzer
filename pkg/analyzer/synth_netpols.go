@@ -164,23 +164,28 @@ func getDeployConnSelector(deployConn *deploymentConnectivity) *metaV1.LabelSele
 	return &metaV1.LabelSelector{MatchLabels: deployConn.Resource.Resource.Labels}
 }
 
-func toNetpolPorts(ports []SvcNetworkAttr, exposedOnly bool) []network.NetworkPolicyPort {
-	netpolPorts := make([]network.NetworkPolicyPort, 0, len(ports))
-	for _, port := range ports {
-		if exposedOnly && !port.exposeToCluster {
+func toNetpolPorts(svcPorts []SvcNetworkAttr, exposedOnly bool) []network.NetworkPolicyPort {
+	netpolPorts := make([]network.NetworkPolicyPort, 0, len(svcPorts))
+	for _, svcPort := range svcPorts {
+		if exposedOnly && !svcPort.exposeToCluster {
 			continue
 		}
-		protocol := port.Protocol
+		protocol := svcPort.Protocol
 		if protocol == "" {
 			protocol = core.ProtocolTCP
 		}
-		portNum := port.TargetPort
-		if portNum.Type == intstr.Int && portNum.IntVal == 0 {
-			portNum = intstr.FromInt(port.Port)
+		port := &svcPort.TargetPort
+		if port.Type == intstr.Int && port.IntVal == 0 {
+			if svcPort.Port != 0 {
+				intPort := intstr.FromInt(svcPort.Port)
+				port = &intPort
+			} else {
+				port = nil // unspecified port
+			}
 		}
 		netpolPort := network.NetworkPolicyPort{
 			Protocol: &protocol,
-			Port:     &portNum,
+			Port:     port,
 		}
 		netpolPorts = append(netpolPorts, netpolPort)
 	}

@@ -34,6 +34,7 @@ type inArgs struct {
 	OutputFile   *string
 	OutputFormat *string
 	DNSPort      *int
+	connsFile    *string
 	SynthNetpols *bool
 	Quiet        *bool
 	Verbose      *bool
@@ -47,6 +48,7 @@ func parseInArgs(cmdlineArgs []string) (*inArgs, error) {
 	args.OutputFormat = flagset.String("format", jsonFormat, "output format; must be either \"json\" or \"yaml\"")
 	args.SynthNetpols = flagset.Bool("netpols", false, "whether to synthesize NetworkPolicies to allow only the discovered connections")
 	args.DNSPort = flagset.Int("dnsport", analyzer.DefaultDNSPort, "DNS port to be used in egress rules of synthesized NetworkPolicies")
+	args.connsFile = flagset.String("conns", "", "a file specifying connections to enable")
 	args.Quiet = flagset.Bool("q", false, "runs quietly, reports only severe errors and results")
 	args.Verbose = flagset.Bool("v", false, "runs with more informative messages printed to log")
 	err := flagset.Parse(cmdlineArgs)

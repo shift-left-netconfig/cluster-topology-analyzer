@@ -1,0 +1,21 @@
+sock-shop/deployment/orders    => sock-shop/service/catalogue       : TCP 80
+sock-shop/deployment/catalogue => sock-shop/deployment/catalogue-db
+# sock-shop/deployment/orders => 59.48.20.0/24 : TCP 443
+
+# Known workloads in NS sock-shop, can connect to known workloads in NS sock-shop, named session-db
+sock-shop/deployment/_ => sock-shop/deployment/session-db
+
+# All workloads in NS ns1, can connect to the deployment shipping in NS sock-shop
+# ns1/*/* => sock-shop/deployment/shipping
+
+# All workloads in the cluster, can connect to the deployment catalogue-db in NS sock-shop
+# */*/* => sock-shop/deployment/orders
+
+# 0.0.0.0/0 => sock-shop/deployment/catalogue-db
+
+
+
+# ns1/*/session-db # not supported
+# ns1/deployment/* # not supported
+# */deployment/*   # not supported
+# */deployment/session-db # not supported

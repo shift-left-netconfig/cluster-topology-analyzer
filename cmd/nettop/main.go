@@ -90,7 +90,11 @@ func getVerbosity(args *inArgs) analyzer.Verbosity {
 // (or NetworkPolicies to allow only this connectivity)
 func detectTopology(args *inArgs) error {
 	logger := analyzer.NewDefaultLoggerWithVerbosity(getVerbosity(args))
-	synth := analyzer.NewPoliciesSynthesizer(analyzer.WithLogger(logger), analyzer.WithDNSPort(*args.DNSPort))
+	opts := []analyzer.PoliciesSynthesizerOption{analyzer.WithLogger(logger), analyzer.WithDNSPort(*args.DNSPort)}
+	if *args.connsFile != "" {
+		opts = append(opts, analyzer.WithConnectionsFile(*args.connsFile))
+	}
+	synth := analyzer.NewPoliciesSynthesizer(opts...)
 
 	var content interface{}
 	if args.SynthNetpols != nil && *args.SynthNetpols {
